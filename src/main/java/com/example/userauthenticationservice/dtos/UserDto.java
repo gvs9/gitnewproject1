@@ -1,10 +1,21 @@
 package com.example.userauthenticationservice.dtos;
 
 import com.example.userauthenticationservice.models.Role;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.util.HashSet;
+import java.util.Set;
+@Getter
+@Setter
 public class UserDto {
     private String email;
 
-    private Role role;
+    private Set<Role> roles=new HashSet<>();
 
+//    public void setEmail(String email) {
+//    }
+//
+//    public void setRoles(Set<Role> roles) {
+//    }
 }
