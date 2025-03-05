@@ -14,4 +14,5 @@ public interface IAuthService {
     Pair<User, MultiValueMap<String,String>>  login(String email, String password);
 
 
+    Boolean validateToken(String token,Long userId);
 }

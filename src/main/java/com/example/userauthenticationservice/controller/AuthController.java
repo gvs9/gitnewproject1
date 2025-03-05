@@ -4,7 +4,6 @@ import com.example.userauthenticationservice.dtos.*;
 import com.example.userauthenticationservice.exceptions.InvalidCredentialsException;
 import com.example.userauthenticationservice.exceptions.UserAlreadyExistException;
 import com.example.userauthenticationservice.models.User;
-import com.example.userauthenticationservice.services.AuthService;
 import com.example.userauthenticationservice.services.IAuthService;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,6 +70,23 @@ public class AuthController {
 //        {
 //            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
 //        }
+
+@PostMapping("/validate")
+public ResponseEntity<Boolean> validateToken(@RequestBody ValidateTokenRequestDto validateTokenRequestDto) {
+try {
+    Boolean response = authService.validateToken(validateTokenRequestDto.getToken(), validateTokenRequestDto.getUserId());
+    if (!response) {
+        throw new InvalidCredentialsException("Invalid Credentials");
+    }
+    return new ResponseEntity<>(true, HttpStatus.OK);
+}
+        catch(InvalidCredentialsException e) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+    }
+        }
+
+
+
 
 
 

@@ -6,8 +6,10 @@ import com.example.userauthenticationservice.models.SessionState;
 import com.example.userauthenticationservice.models.User;
 import com.example.userauthenticationservice.repos.SessionRepo;
 import com.example.userauthenticationservice.repos.UserRepo;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.MacAlgorithm;
+//import io.jsonwebtoken.security.MacAlgorithm;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -26,40 +28,43 @@ import java.util.Optional;
 @Service
 public class AuthService implements IAuthService {
 
-@Autowired
-private UserRepo userRepo;
+    @Autowired
+    private UserRepo userRepo;
 
-@Autowired
-private SessionRepo sessionRepo;
+    @Autowired
+    private SessionRepo sessionRepo;
 
-@Autowired
-private BCryptPasswordEncoder bCryptPasswordEncoder;
+    @Autowired
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
 
-public User signup(String email, String password) {
+    @Autowired
+    private SecretKey secretKey;
+
+    public User signup(String email, String password) {
 
 
-    Optional<User> optionalUser= userRepo.findByEmail(email);
+        Optional<User> optionalUser = userRepo.findByEmail(email);
 
-    if(optionalUser.isPresent()) {
-       return null;
+        if (optionalUser.isPresent()) {
+            return null;
+
+        }
+
+        User user = new User();
+        user.setEmail(email);
+        user.setPassword(bCryptPasswordEncoder.encode(password));
+        userRepo.save(user);
+        return user;
 
     }
 
-User user = new User();
-    user.setEmail(email);
-    user.setPassword(bCryptPasswordEncoder.encode(password));
-    userRepo.save(user);
-    return user;
+    public Pair<User, MultiValueMap<String, String>> login(String email, String password) {
 
-}
+        Optional<User> optionalUser = userRepo.findByEmail(email);
 
-public Pair<User,MultiValueMap<String,String>> login(String email, String password) {
-
-    Optional<User> optionalUser= userRepo.findByEmail(email);
-
-    if (optionalUser.isEmpty() || !bCryptPasswordEncoder.matches(password, optionalUser.get().getPassword())) {
-        throw new InvalidCredentialsException("Invalid email or password");
-    }
+        if (optionalUser.isEmpty() || !bCryptPasswordEncoder.matches(password, optionalUser.get().getPassword())) {
+            throw new InvalidCredentialsException("Invalid email or password");
+        }
 
 //    if(optionalUser.isEmpty()) {
 //        return null;
@@ -86,37 +91,71 @@ public Pair<User,MultiValueMap<String,String>> login(String email, String passwo
 //            " \"expirationDate": "25thJuly2024"\n" +
 //            "}";
 
-    Map<String,Object>claims=new HashMap<>();
-    claims.put("email",optionalUser.get().getEmail());
-    claims.put("role",optionalUser.get().getRoles());
-    claims.put("user_id",optionalUser.get().getId());
-    long nowInMillis = System.currentTimeMillis();
-    claims.put("created_at",nowInMillis);
-    claims.put("exp_at",nowInMillis+1000000);
-
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("email", optionalUser.get().getEmail());
+        claims.put("role", optionalUser.get().getRoles());
+        claims.put("user_id", optionalUser.get().getId());
+        long nowInMillis = System.currentTimeMillis();
+        claims.put("created_at", nowInMillis);
+        claims.put("exp_at", nowInMillis + 1000000);
 
 
 //byte[]content=message.getBytes(StandardCharsets.UTF_8);
-    MacAlgorithm algorithm=Jwts.SIG.HS256;
-    SecretKey secretKey= algorithm.key().build();
-String token = Jwts.builder().claims(claims).signWith(secretKey).compact();
-
-    MultiValueMap<String,String> headers=new LinkedMultiValueMap<>();
-    headers.add(HttpHeaders.SET_COOKIE,token);
+//        MacAlgorithm algorithm = Jwts.SIG.HS256;
+//        SecretKey secretKey = algorithm.key().build();
 
 
-    Session session=new Session();
-    session.setSessionState(SessionState.ACTIVE);
-    session.setUser(optionalUser.get());
-    session.setToken(token);
-    sessionRepo.save(session);
-return new Pair<User,MultiValueMap<String,String>>(optionalUser.get(),headers);
+        String token = Jwts.builder().claims(claims).signWith(secretKey).compact();
+
+        MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
+        headers.add(HttpHeaders.SET_COOKIE, token);
 
 
+        Session session = new Session();
+        session.setSessionState(SessionState.ACTIVE);
+        session.setUser(optionalUser.get());
+        session.setToken(token);
+        sessionRepo.save(session);
+        return new Pair<User, MultiValueMap<String, String>>(optionalUser.get(), headers);
 
-//TOKEN VALIDATION
-
-}
+    }
 
 
+    public Boolean validateToken(String token, Long userId) {
+
+
+        Optional<Session> optionalSession = sessionRepo.findByToken(token);
+
+        if (optionalSession.isEmpty()) {
+            System.out.println("token mismatch");
+            return false;
+        }
+        Session session = optionalSession.get();
+        String storedToken = session.getToken();
+
+
+        JwtParser jwtParser = Jwts.parser().verifyWith(secretKey).build();
+        Claims claims = jwtParser.parseSignedClaims(storedToken).getPayload();
+
+        Long tokenExpiry = claims.get("exp_at", Long.class);
+
+        Long currentTime = System.currentTimeMillis();
+
+        System.out.println(tokenExpiry);
+        System.out.println(currentTime);
+        if(currentTime > tokenExpiry) {
+            System.out.println("token is expired");
+                    return false;
+        }
+
+        User user = userRepo.findById(userId).get();
+        String email =user.getEmail();
+        String tokenEmail = claims.get("email", String.class);
+        if(!email.equals(tokenEmail)) {
+            System.out.println("email does not match");
+            return false;
+
+        }
+return true;
+    }
 }
