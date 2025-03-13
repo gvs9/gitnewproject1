@@ -131,11 +131,12 @@ public class SpringSecurity {
                 .cors(Customizer.withDefaults())
                 .csrf().disable()
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/public/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(Customizer.withDefaults())
-                .httpBasic(Customizer.withDefaults()); // Updated to avoid deprecated method
+                .httpBasic(Customizer.withDefaults())
+                .httpBasic(httpBasic -> httpBasic.disable()); // Updated to avoid deprecated method
 
         return http.build();
     }

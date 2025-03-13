@@ -300,14 +300,13 @@ public class SecurityConfig {
                 .with(authorizationServerConfigurer, (authorizationServer) ->
                         authorizationServer.oidc(Customizer.withDefaults()) // Enable OpenID Connect 1.0
                 )
-                .authorizeHttpRequests((authorize) -> authorize.anyRequest().authenticated());
+                .authorizeHttpRequests((authorize) -> authorize
+                        .requestMatchers("/actuator/**").permitAll()
+                        .anyRequest()
+                        .authenticated());
 
         return http.build();
     }
-
-
-
-
 
 
     @Bean
@@ -342,5 +341,7 @@ public class SecurityConfig {
     public AuthorizationServerSettings authorizationServerSettings() {
         return AuthorizationServerSettings.builder().build();
     }
+
+
 }
 
