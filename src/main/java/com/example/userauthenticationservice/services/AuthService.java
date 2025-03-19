@@ -1,11 +1,17 @@
 package com.example.userauthenticationservice.services;
 
+import com.example.userauthenticationservice.clients.KafkaProducerClient;
+import com.example.userauthenticationservice.dtos.EmailDto;
+import com.example.userauthenticationservice.dtos.UserDto;
 import com.example.userauthenticationservice.exceptions.InvalidCredentialsException;
 import com.example.userauthenticationservice.models.Session;
 import com.example.userauthenticationservice.models.SessionState;
 import com.example.userauthenticationservice.models.User;
 import com.example.userauthenticationservice.repos.SessionRepo;
 import com.example.userauthenticationservice.repos.UserRepo;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
@@ -40,6 +46,12 @@ public class AuthService implements IAuthService {
     @Autowired
     private SecretKey secretKey;
 
+    @Autowired
+    private KafkaProducerClient kafkaProducerClient;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
     public User signup(String email, String password) {
 
 
@@ -54,9 +66,21 @@ public class AuthService implements IAuthService {
         user.setEmail(email);
         user.setPassword(bCryptPasswordEncoder.encode(password));
         userRepo.save(user);
-        return user;
+        try {
+            EmailDto emailDto = new EmailDto();
+            emailDto.setTo(email);
+            emailDto.setSubject("User Registration");
+            emailDto.setBody("Welcome ");
+            emailDto.setFrom("sakharkargitesh9@gmail.com");
 
+
+            kafkaProducerClient.sendMessage("signup", objectMapper.writeValueAsString(emailDto));
+        } catch (JsonProcessingException exception) {
+            throw new RuntimeException("Error while sending email");
+        }
+        return user;
     }
+
 
     public Pair<User, MultiValueMap<String, String>> login(String email, String password) {
 

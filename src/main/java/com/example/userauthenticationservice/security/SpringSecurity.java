@@ -130,13 +130,16 @@ public class SpringSecurity {
         http
                 .cors(Customizer.withDefaults())
                 .csrf().disable()
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/actuator/**").permitAll()
-                        .anyRequest().authenticated()
-                )
-                .formLogin(Customizer.withDefaults())
-                .httpBasic(Customizer.withDefaults())
-                .httpBasic(httpBasic -> httpBasic.disable()); // Updated to avoid deprecated method
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest().permitAll()
+                );
+//                .authorizeHttpRequests(authorize -> authorize
+//                        .requestMatchers("/actuator/**").permitAll()
+//                        .anyRequest().authenticated()
+//                )
+//                .formLogin(Customizer.withDefaults())
+//                .httpBasic(Customizer.withDefaults())
+//                .httpBasic(httpBasic -> httpBasic.disable()); // Updated to avoid deprecated method
 
         return http.build();
     }
