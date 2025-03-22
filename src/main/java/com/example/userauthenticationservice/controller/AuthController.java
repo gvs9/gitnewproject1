@@ -5,11 +5,13 @@ import com.example.userauthenticationservice.exceptions.InvalidCredentialsExcept
 import com.example.userauthenticationservice.exceptions.UserAlreadyExistException;
 import com.example.userauthenticationservice.models.User;
 import com.example.userauthenticationservice.services.IAuthService;
+import jakarta.validation.Valid;
 import org.antlr.v4.runtime.misc.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,7 +26,11 @@ public class AuthController {
 
 
     @PostMapping("/signup")
-    public ResponseEntity<UserDto> signup(@RequestBody SignupRequestDto signupRequestDto) {
+    public ResponseEntity<UserDto> signup( @RequestBody SignupRequestDto signupRequestDto) {
+
+
+
+
 
         try {
     User user = authService.signup(signupRequestDto.getEmail(), signupRequestDto.getPassword());
@@ -102,7 +108,7 @@ try {
 
         UserDto userDto=new UserDto();
         userDto.setEmail(user.getEmail());
-         userDto.setRoles(user.getRoles());
+        // userDto.setRoles(user.getRoles());
 
         return userDto;
 

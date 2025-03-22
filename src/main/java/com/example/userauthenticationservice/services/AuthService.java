@@ -73,10 +73,10 @@ public class AuthService implements IAuthService {
             emailDto.setBody("Welcome ");
             emailDto.setFrom("sakharkargitesh9@gmail.com");
 
-
             kafkaProducerClient.sendMessage("signup", objectMapper.writeValueAsString(emailDto));
+
         } catch (JsonProcessingException exception) {
-            throw new RuntimeException("Error while sending email");
+            throw new RuntimeException(exception);
         }
         return user;
     }

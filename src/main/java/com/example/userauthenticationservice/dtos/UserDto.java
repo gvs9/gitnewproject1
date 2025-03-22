@@ -11,7 +11,7 @@ import java.util.Set;
 public class UserDto {
     private String email;
 
-    private Set<Role> roles=new HashSet<>();
+    //private Set<Role> roles=new HashSet<>();
 
 //    public void setEmail(String email) {
 //    }
